@@ -4,7 +4,7 @@ Shuffles your Spotify playlists to create a true shuffle.
 Uses https://github.com/jwilsson/spotify-web-api-php
 
 This script needs to be executed by cron. For example:<br>
-0,10,20,30,40,50 6-11,13-15,17-22 * * * /usr/bin/nice -n20 /usr/bin/php /var/www/html/spotify/cli.php > /dev/null 2>&1<br>
+0,10,20,30,40,50 6-22 * * * /usr/bin/nice -n20 /usr/bin/php /var/www/html/spotify/cli.php > /dev/null 2>&1<br>
 0 2,12,16 * * * /usr/bin/nice -n20 /usr/bin/php /var/www/html/spotify/cli-night.php > /dev/null 2>&1<br>
 
 cli.php fetches your recently played songs and searches in the first 50 tracks of the playlist where it is. Finally the tracks are put randomly at the back of the playlist.<br>
