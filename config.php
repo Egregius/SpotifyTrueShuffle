@@ -5,3 +5,4 @@ $returnurl='http://192.168.2.20/spotify';
 $telegrambot='1939143936:AAFX4gPC6szW__P2eQvLR_GBwaExRRp1D3A';
 $telegramchatid=964051278;
 $spotifyusername='egregiusspotify';
+$randomposition=0.8;
