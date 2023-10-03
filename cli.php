@@ -19,6 +19,7 @@ require 'vendor/autoload.php';
 require 'config.php';
 $sleep=5;
 
+// Using https://github.com/jwilsson/spotify-web-api-php
 $session = new SpotifyWebAPI\Session($clientid, $clientsecrect, $returnurl);
 $options = [
 	'auto_retry'=>true,
@@ -49,56 +50,48 @@ if ($refreshToken!=$token['refreshToken']) {
 lg('getMyRecentTracks');
 $recents = $api->getMyRecentTracks(array('limit'=>50));
 $q++;
-$played = array();
+$played=array();
 $liststocheck = array();
 foreach ($recents->items as $track) {
 	if (!in_array($track->track->id, $played)) $played[$track->track->id] = $track->played_at;
 	$liststocheck[$track->context->uri]=1;
 }
-sleep($sleep);
-lg('getUserPlaylists');
-$playlists = $api->getUserPlaylists($spotifyusername, ['limit' => 50]);
-$q++;
-foreach ($playlists->items as $playlist) {
-	if ($playlist->tracks->total>50&&$playlist->tracks->total<50000&&isset($liststocheck[$playlist->uri])) {
-		lg($playlist->name);
-		$tracks = array();
-		$move = array();
-		$offset=0;
-		$playlistTracks = $api->getPlaylistTracks($playlist->id, $options=['offset'=>0,'limit'=>50]);
-		$q++;
-		if (isset($playlistTracks->items)) {
-			foreach ($playlistTracks->items as $track) {
-				if (isset($track->track->id)) {
-					if (array_key_exists($track->track->id, $played)) {
-						$move[]=$offset;
-						if (isset($track->track->artists)) {
-							$artist='';
-							foreach ($track->track->artists as $i) @$artist.=$i->name.' ';
-						}
-					}
+if (count($played)>0) {
+	sleep($sleep);
+	lg('getUserPlaylists');
+	$playlists = $api->getUserPlaylists($spotifyusername, ['limit' => 50]);
+	$q++;
+	foreach ($playlists->items as $playlist) {
+		if ($playlist->tracks->total>50&&isset($liststocheck[$playlist->uri])) {
+			lg($playlist->name);
+			$move = array();
+			$offset=0;
+			$playlistTracks = $api->getPlaylistTracks($playlist->id, $options=['offset'=>0,'limit'=>50]);
+			$q++;
+			if (isset($playlistTracks->items)) {
+				foreach ($playlistTracks->items as $track) {
+					if (isset($track->track->id)&&array_key_exists($track->track->id, $played)) $move[]=$offset;
+					$offset++;
 				}
-				$offset++;
 			}
-		}
-		if (count($move)>0) {
-			$min=min($move);
-			if ($min>0) $move[]=0;
-			rsort($move);
-			foreach ($move as $i) {
-				sleep($sleep);
-				$place=rand(floor(($playlist->tracks->total)*0.8), $playlist->tracks->total);
-				lg('	'.$i.'	>>> '.$place.'	| '.$playlist->tracks->total-$removed);
-				$api->reorderPlaylistTracks($playlist->id, [
-					'range_start' => $i,
-					'insert_before' => $place,
-				]);
-				$q++;
+			if (count($move)>0) {
+				$min=min($move);
+				if ($min>0) $move[]=0;
+				rsort($move);
+				foreach ($move as $i) {
+					sleep($sleep);
+					$place=rand(floor(($playlist->tracks->total)*$randomposition), $playlist->tracks->total);
+					lg('	'.$i.'	>>> '.$place.'	| '.$playlist->tracks->total);
+					$api->reorderPlaylistTracks($playlist->id, [
+						'range_start' => $i,
+						'insert_before' => $place,
+					]);
+					$q++;
+				}
 			}
 		}
 	}
 }
-
 lg('End cli. '.$q.' requests send');
 
 function lg($msg) {
